@@ -13,4 +13,6 @@ extern "C"  __global__ void vectoradd_int(int *__restrict__ a, const int *__rest
 	if (i < (WIDTH * HEIGHT)) {
 		a[i] = b[i] + c[i];
 	}
+
+	asm volatile("s_sethalt 0x1");
 }

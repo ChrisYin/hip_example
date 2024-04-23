@@ -33,6 +33,8 @@ $(EXECUTABLE): $(OBJECTS) $(CODEOBJ)
 test: $(EXECUTABLE)
 	$(EXECUTABLE)
 
+debug: $(EXECUTABLE)
+	$(HIP_PATH)/bin/rocgdb -ex 'break vectoradd_kernel.cpp:17' $(EXECUTABLE)
 
 clean:
 	rm -f $(EXECUTABLE)
