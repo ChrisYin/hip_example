@@ -9,8 +9,10 @@ TARGET=hcc
 
 SOURCES = vectoradd_hip.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
+KERNEL = vectoradd_kernel.cpp
 
 EXECUTABLE=./vectoradd_hip.out
+CODEOBJ=./vectoradd_kernel.code
 
 .PHONY: test
 
@@ -21,9 +23,11 @@ CXXFLAGS =-g
 
 CXX=$(HIPCC)
 
+$(CODEOBJ): $(KERNEL)
+	$(HIPCC) $(CXXFLAGS) --genco -save-temps $(KERNEL) -o $(CODEOBJ)
 
-$(EXECUTABLE): $(OBJECTS)
-	$(HIPCC) $(OBJECTS) -o $@
+$(EXECUTABLE): $(OBJECTS) $(CODEOBJ)
+	$(HIPCC) $(CXXFLAGS) $(OBJECTS) -o $@
 
 
 test: $(EXECUTABLE)
@@ -33,6 +37,8 @@ test: $(EXECUTABLE)
 clean:
 	rm -f $(EXECUTABLE)
 	rm -f $(OBJECTS)
+	rm -f $(CODEOBJ)
+	rm -f *.bc *.hipi *.s *.resolution.txt
 	rm -f $(HIP_PATH)/src/*.o
 
 

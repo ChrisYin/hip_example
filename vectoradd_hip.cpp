@@ -37,18 +37,8 @@ THE SOFTWARE.
 #define THREADS_PER_BLOCK_Y 4
 #define THREADS_PER_BLOCK_Z 1
 
-__global__ void vectoradd_int(int *__restrict__ a, const int *__restrict__ b, const int *__restrict__ c,
-				int width, int height)
-
-{
-	int x = hipBlockDim_x * hipBlockIdx_x + hipThreadIdx_x;
-	int y = hipBlockDim_y * hipBlockIdx_y + hipThreadIdx_y;
-
-	int i = y * width + x;
-	if (i < (width * height)) {
-		a[i] = b[i] + c[i];
-	}
-}
+#define fileName "vectoradd_kernel.code"
+#define kernel_name "vectoradd_int"
 
 using namespace std;
 
@@ -70,7 +60,7 @@ int main()
 
 	cout << "hip Device prop succeeded " << endl;
 
-	int i,j;
+	int i, j;
 	int errors;
 
 	hostA = (int *)malloc(NUM * sizeof(int));
@@ -90,9 +80,15 @@ int main()
 	HIP_ASSERT(hipMemcpy(deviceB, hostB, NUM * sizeof(int), hipMemcpyHostToDevice));
 	HIP_ASSERT(hipMemcpy(deviceC, hostC, NUM * sizeof(int), hipMemcpyHostToDevice));
 
-	hipLaunchKernelGGL(vectoradd_int, dim3(WIDTH / THREADS_PER_BLOCK_X, HEIGHT / THREADS_PER_BLOCK_Y),
-			   dim3(THREADS_PER_BLOCK_X, THREADS_PER_BLOCK_Y), 0, 0, deviceA, deviceB, deviceC, WIDTH,
-			   HEIGHT);
+	hipModule_t Module;
+	hipFunction_t Function;
+	hipModuleLoad(&Module, fileName);
+	hipModuleGetFunction(&Function, Module, kernel_name);
+
+	void *args[3] = { &deviceA, &deviceB, &deviceC };
+
+	hipModuleLaunchKernel(Function, WIDTH / THREADS_PER_BLOCK_X, HEIGHT / THREADS_PER_BLOCK_Y, 1,
+			      THREADS_PER_BLOCK_X, THREADS_PER_BLOCK_Y, 1, 0, 0, args, nullptr);
 
 	HIP_ASSERT(hipMemcpy(hostA, deviceA, NUM * sizeof(int), hipMemcpyDeviceToHost));
 
